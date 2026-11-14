@@ -34,7 +34,7 @@
             <div class="hero-meta">
                 <div class="meta-item">
                     <span class="meta-label">Image Registry:</span>
-                    <code class="meta-code">ghcr.io/OWNER/docker-cicd-pipeline</code>
+                    <code class="meta-code">ghcr.io/mdrakibislam68/docker-cicd-pipeline</code>
                 </div>
                 <div class="meta-item">
                     <span class="meta-label">Runtime Environment:</span>
@@ -233,14 +233,14 @@
                     <span class="terminal-title">bash</span>
                 </div>
                 <pre class="terminal-body"><code># Pull the latest release
-docker pull ghcr.io/OWNER/docker-cicd-pipeline:latest
+docker pull ghcr.io/mdrakibislam68/docker-cicd-pipeline:latest
 
 # Or pull a specific semantic version / commit SHA
-docker pull ghcr.io/OWNER/docker-cicd-pipeline:v1.0.0
-docker pull ghcr.io/OWNER/docker-cicd-pipeline:sha-$(git rev-parse --short HEAD)
+docker pull ghcr.io/mdrakibislam68/docker-cicd-pipeline:v1.0.0
+docker pull ghcr.io/mdrakibislam68/docker-cicd-pipeline:sha-$(git rev-parse --short HEAD)
 
 # Run container locally on port 8080
-docker run -d --name cicd-app -p 8080:8080 --read-only ghcr.io/OWNER/docker-cicd-pipeline:latest</code></pre>
+docker run -d --name cicd-app -p 8080:8080 --read-only ghcr.io/mdrakibislam68/docker-cicd-pipeline:latest</code></pre>
             </div>
         </section>
     </main>

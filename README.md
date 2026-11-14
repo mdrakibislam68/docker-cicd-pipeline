@@ -1,8 +1,8 @@
 # Automated Docker CI/CD Pipeline with GitHub Actions and GHCR
 
-[![CI/CD Pipeline](https://github.com/OWNER/docker-cicd-pipeline/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/OWNER/docker-cicd-pipeline/actions/workflows/ci-cd.yml)
+[![CI/CD Pipeline](https://github.com/mdrakibislam68/docker-cicd-pipeline/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/mdrakibislam68/docker-cicd-pipeline/actions/workflows/ci-cd.yml)
 [![Docker Image](https://img.shields.io/badge/docker-unprivileged--alpine-blue?logo=docker)](https://hub.docker.com/r/nginxinc/nginx-unprivileged)
-[![Registry](https://img.shields.io/badge/registry-GHCR-blue?logo=github)](https://github.com/OWNER/docker-cicd-pipeline/pkgs/container/docker-cicd-pipeline)
+[![Registry](https://img.shields.io/badge/registry-GHCR-blue?logo=github)](https://github.com/mdrakibislam68/docker-cicd-pipeline/pkgs/container/docker-cicd-pipeline)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Security: Least Privilege](https://img.shields.io/badge/security-least--privilege-green.svg)](SECURITY.md)
 
@@ -166,7 +166,7 @@ You can run the entire CI/CD validation and smoke test lifecycle locally before 
 The `local-test.sh` script mirrors the exact steps performed by GitHub Actions:
 ```bash
 # Clone the repository
-git clone https://github.com/OWNER/docker-cicd-pipeline.git
+git clone https://github.com/mdrakibislam68/docker-cicd-pipeline.git
 cd docker-cicd-pipeline
 
 # Run all validations, image build, container spawn, and smoke tests
@@ -241,13 +241,13 @@ echo $CR_PAT | docker login ghcr.io -u YOUR_GITHUB_USERNAME --password-stdin
 ### 2. Pull Specific Tags
 ```bash
 # Pull the latest stable release
-docker pull ghcr.io/OWNER/docker-cicd-pipeline:latest
+docker pull ghcr.io/mdrakibislam68/docker-cicd-pipeline:latest
 
 # Pull by specific semantic version
-docker pull ghcr.io/OWNER/docker-cicd-pipeline:v1.0.0
+docker pull ghcr.io/mdrakibislam68/docker-cicd-pipeline:v1.0.0
 
 # Pull by specific commit SHA
-docker pull ghcr.io/OWNER/docker-cicd-pipeline:sha-$(git rev-parse --short HEAD)
+docker pull ghcr.io/mdrakibislam68/docker-cicd-pipeline:sha-$(git rev-parse --short HEAD)
 ```
 
 ### 3. Run Container with Security Hardening
@@ -257,7 +257,7 @@ docker run -d \
   -p 8080:8080 \
   --security-opt no-new-privileges:true \
   --restart unless-stopped \
-  ghcr.io/OWNER/docker-cicd-pipeline:latest
+  ghcr.io/mdrakibislam68/docker-cicd-pipeline:latest
 ```
 
 ---
