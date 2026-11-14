@@ -76,7 +76,7 @@ jobs:
           echo "::endgroup::"
 
       - name: Lint Dockerfile (Hadolint)
-        uses: hadolint/hadolint-action@54c9adabbbe4b1e231a231be7227c44d1fde645e # v3.1.0
+        uses: hadolint/hadolint-action@54c9adbab1582c2ef04b2016b760714a4bfde3cf # v3.1.0
         with:
           dockerfile: Dockerfile
           failure-threshold: error
@@ -217,7 +217,7 @@ jobs:
 
       - name: Build and push container image to GHCR
         id: build-and-push
-        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c456f0cf1a # v6.15.0
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
         with:
           context: .
           push: true
