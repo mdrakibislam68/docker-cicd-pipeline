@@ -1,0 +1,249 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*.*.*'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      manual_reason:
+        description: 'Reason for manual execution'
+        required: false
+        default: 'Manual pipeline trigger'
+
+# Restrict default permissions at workflow level (Principle of Least Privilege)
+permissions:
+  contents: read
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # ============================================================================
+  # JOB A: Validate (Syntax, Configs, Linters, Static Analysis)
+  # ============================================================================
+  validate:
+    name: Validate Configurations & Code
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up Python
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: '3.12'
+
+      - name: Validate Docker Compose specification
+        run: |
+          echo "::group::Validating Docker Compose"
+          docker compose config --quiet
+          echo "Docker Compose syntax is valid."
+          echo "::endgroup::"
+
+      - name: Validate Nginx configuration syntax
+        run: |
+          echo "::group::Validating Nginx Configuration"
+          docker run --rm --entrypoint nginx \
+            -v "${{ github.workspace }}/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro" \
+            nginxinc/nginx-unprivileged:1.27-alpine -t -q
+          echo "Nginx configuration syntax is valid."
+          echo "::endgroup::"
+
+      - name: Check Shell scripts syntax (bash -n)
+        run: |
+          echo "::group::Validating Shell Scripts"
+          bash -n scripts/local-build.sh
+          bash -n scripts/local-test.sh
+          echo "All shell scripts passed syntax inspection."
+          echo "::endgroup::"
+
+      - name: Check Python test suite syntax (py_compile)
+        run: |
+          echo "::group::Validating Python Syntax"
+          python3 -m py_compile tests/test_deployment.py
+          echo "Python test suite compiled successfully."
+          echo "::endgroup::"
+
+      - name: Lint Dockerfile (Hadolint)
+        uses: hadolint/hadolint-action@54c9adabbbe4b1e231a231be7227c44d1fde645e # v3.1.0
+        with:
+          dockerfile: Dockerfile
+          failure-threshold: error
+
+  # ============================================================================
+  # JOB B: Test (Build Container, Run Container, Execute Smoke Tests)
+  # ============================================================================
+  test:
+    name: Build & Smoke Test Container
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: validate
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up Python
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: '3.12'
+
+      - name: Build test container image
+        run: |
+          echo "::group::Building Docker image for smoke tests"
+          docker build \
+            --tag docker-cicd-pipeline:test \
+            --build-arg BUILD_VERSION="ci-${{ github.sha }}" \
+            --build-arg COMMIT_SHA="${{ github.sha }}" \
+            --build-arg BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+            .
+          echo "::endgroup::"
+
+      - name: Launch test container environment
+        run: |
+          echo "::group::Starting test container"
+          docker run -d \
+            --name test-web-container \
+            --security-opt no-new-privileges:true \
+            -p 8080:8080 \
+            docker-cicd-pipeline:test
+          echo "::endgroup::"
+
+      - name: Verify container health status
+        run: |
+          echo "::group::Awaiting container healthy state"
+          MAX_WAIT=30
+          WAIT_COUNT=0
+          HEALTH_STATUS="starting"
+
+          while [ "${WAIT_COUNT}" -lt "${MAX_WAIT}" ]; do
+            HEALTH_STATUS="$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}unknown{{end}}' test-web-container 2>/dev/null || echo "starting")"
+            if [ "${HEALTH_STATUS}" = "healthy" ]; then
+              echo "Container reached healthy state after ${WAIT_COUNT}s."
+              break
+            fi
+            sleep 1
+            WAIT_COUNT=$((WAIT_COUNT + 1))
+          done
+
+          if [ "${HEALTH_STATUS}" != "healthy" ]; then
+            echo "::error::Container failed to report healthy within ${MAX_WAIT} seconds (Status: ${HEALTH_STATUS})"
+            docker logs test-web-container
+            exit 1
+          fi
+          echo "::endgroup::"
+
+      - name: Execute automated deployment tests
+        run: |
+          echo "::group::Running Python Smoke Tests"
+          python3 tests/test_deployment.py --url http://127.0.0.1:8080
+          echo "::endgroup::"
+
+      - name: Capture container logs on failure
+        if: failure()
+        run: |
+          echo "::group::Failure Investigation - Container Logs"
+          docker logs test-web-container
+          echo "::endgroup::"
+
+      - name: Teardown test container
+        if: always()
+        run: |
+          echo "::group::Teardown Test Container"
+          docker stop test-web-container >/dev/null 2>&1 || true
+          docker rm -f test-web-container >/dev/null 2>&1 || true
+          echo "Test environment cleaned up."
+          echo "::endgroup::"
+
+  # ============================================================================
+  # JOB C: Publish (Build & Push versioned image to GHCR)
+  # ============================================================================
+  publish:
+    name: Publish to GHCR
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [validate, test]
+    # Restrict publishing to trusted branch pushes and version tags only (never pull requests)
+    if: |
+      github.event_name != 'pull_request' &&
+      (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+
+      - name: Log in to GitHub Container Registry (GHCR)
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata and tags
+        id: meta
+        uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,format=short,prefix=sha-
+          labels: |
+            org.opencontainers.image.title=docker-cicd-pipeline
+            org.opencontainers.image.description=Automated Docker CI/CD Pipeline with GitHub Actions and GHCR
+            org.opencontainers.image.vendor=${{ github.repository_owner }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+
+      - name: Build and push container image to GHCR
+        id: build-and-push
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c456f0cf1a # v6.15.0
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            BUILD_VERSION=${{ steps.meta.outputs.version }}
+            COMMIT_SHA=${{ github.sha }}
+            BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Output deployment summary
+        run: |
+          echo "### 🚀 GHCR Container Publishing Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Registry:** \`${{ env.REGISTRY }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Image Name:** \`${{ env.IMAGE_NAME }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Image Digest:** \`${{ steps.build-and-push.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "#### Published Tags:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`text" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "#### Pull Command:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

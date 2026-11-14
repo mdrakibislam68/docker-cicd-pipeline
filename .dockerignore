@@ -1,0 +1,29 @@
+# Version control
+.git
+.gitignore
+
+# CI/CD & GitHub configurations
+.github
+
+# Testing and automation scripts
+tests
+scripts
+compose.yaml
+compose.override.yaml
+
+# Documentation and project metadata
+README.md
+SECURITY.md
+LICENSE
+
+# Python bytecode and temporary files
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# OS and Editor artifacts
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

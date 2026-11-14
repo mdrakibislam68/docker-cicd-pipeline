@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automated Docker CI/CD Pipeline | DevOps Portfolio</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
+</head>
+<body>
+    <header class="header">
+        <div class="container nav-container">
+            <div class="logo">
+                <span class="logo-icon">🐳</span>
+                <span class="logo-text">docker-cicd-pipeline</span>
+            </div>
+            <div class="badge-group">
+                <span class="badge badge-success" id="live-indicator">
+                    <span class="dot"></span> Pipeline Active
+                </span>
+                <span class="badge badge-info" id="version-badge">v1.0.0</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Hero Section -->
+        <section class="hero card">
+            <div class="hero-badge">PRODUCTION-GRADE DEVOPS SHOWCASE</div>
+            <h1>Automated Docker CI/CD Pipeline</h1>
+            <p class="hero-subtitle">
+                Continuous Integration, automated validation, container smoke testing, and versioned publishing to GitHub Container Registry (GHCR) using GitHub Actions.
+            </p>
+            <div class="hero-meta">
+                <div class="meta-item">
+                    <span class="meta-label">Image Registry:</span>
+                    <code class="meta-code">ghcr.io/OWNER/docker-cicd-pipeline</code>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Runtime Environment:</span>
+                    <span class="meta-value">Nginx Unprivileged Alpine (Non-Root)</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Security Profile:</span>
+                    <span class="meta-value">Least-Privilege RBAC &bull; Read-Only Capable</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Live Status & Healthcheck Dashboard -->
+        <section class="grid-2">
+            <div class="card status-card">
+                <div class="card-header">
+                    <h2>Deployment Status</h2>
+                    <span class="status-pill status-healthy" id="container-status-pill">HEALTHY</span>
+                </div>
+                <ul class="status-list">
+                    <li>
+                        <span class="label">Container Health:</span>
+                        <span class="value text-success" id="val-health">Passing (/healthz: 200 OK)</span>
+                    </li>
+                    <li>
+                        <span class="label">Internal Port:</span>
+                        <span class="value">8080 (Unprivileged TCP)</span>
+                    </li>
+                    <li>
+                        <span class="label">Web Server:</span>
+                        <span class="value">Nginx (Alpine Linux)</span>
+                    </li>
+                    <li>
+                        <span class="label">Instance Uptime:</span>
+                        <span class="value" id="uptime-display">00h 00m 00s</span>
+                    </li>
+                    <li>
+                        <span class="label">Build Identifier:</span>
+                        <span class="value"><code id="build-id">v1.0.0-release</code></span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="card health-card">
+                <div class="card-header">
+                    <h2>Live API Health Endpoint</h2>
+                    <button class="btn btn-sm" id="btn-ping-health">Ping /healthz</button>
+                </div>
+                <p class="health-desc">
+                    The Docker container provides an automated health probe used by Docker daemon health checks, load balancers, and monitoring tools.
+                </p>
+                <div class="terminal-box">
+                    <div class="terminal-bar">
+                        <span class="terminal-dot red"></span>
+                        <span class="terminal-dot yellow"></span>
+                        <span class="terminal-dot green"></span>
+                        <span class="terminal-title">GET /healthz</span>
+                    </div>
+                    <pre class="terminal-body" id="health-output">Loading endpoint status...</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Technology Stack -->
+        <section class="card">
+            <h2>Technology Stack</h2>
+            <p class="section-desc">Standardized toolchain ensuring reproducible builds, strict validation, and zero-drift container deployments.</p>
+            <div class="tech-grid">
+                <div class="tech-item">
+                    <div class="tech-icon">⚡</div>
+                    <div class="tech-title">GitHub Actions</div>
+                    <div class="tech-desc">Automated CI/CD workflows with branch isolation, least-privilege tokens, and multi-stage jobs.</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-icon">🐳</div>
+                    <div class="tech-title">Docker & Buildx</div>
+                    <div class="tech-desc">Multi-platform OCI image packaging with multi-stage builds and layer caching.</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-icon">🐙</div>
+                    <div class="tech-title">Docker Compose</div>
+                    <div class="tech-desc">Declarative orchestration specification for consistent local testing and test automation.</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-icon">🌐</div>
+                    <div class="tech-title">Nginx (Non-Root)</div>
+                    <div class="tech-desc">Hardened unprivileged Alpine container with custom security headers and Gzip compression.</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-icon">📦</div>
+                    <div class="tech-title">GHCR</div>
+                    <div class="tech-desc">GitHub Container Registry for secure, authenticated, and semantic container distribution.</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-icon">🐍</div>
+                    <div class="tech-title">Python Tests</div>
+                    <div class="tech-desc">Zero-dependency automated smoke and validation test suite utilizing standard library.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CI/CD Process Architecture -->
+        <section class="card">
+            <h2>CI/CD Pipeline Architecture</h2>
+            <p class="section-desc">Every commit and pull request passes through an automated validation lifecycle before artifacts reach the registry.</p>
+            
+            <div class="pipeline-flow">
+                <div class="pipeline-step">
+                    <div class="step-badge">Stage 1</div>
+                    <div class="step-title">Validation</div>
+                    <ul class="step-tasks">
+                        <li>Compose syntax check</li>
+                        <li>Nginx config test (<code>nginx -t</code>)</li>
+                        <li>Shell script syntax (<code>bash -n</code>)</li>
+                        <li>Python py_compile check</li>
+                        <li>Dockerfile syntax check</li>
+                    </ul>
+                </div>
+
+                <div class="pipeline-arrow">&rarr;</div>
+
+                <div class="pipeline-step">
+                    <div class="step-badge">Stage 2</div>
+                    <div class="step-title">Build & Smoke Test</div>
+                    <ul class="step-tasks">
+                        <li>Container image build</li>
+                        <li>Container spin-up</li>
+                        <li>HTTP 200 verification</li>
+                        <li>Health probe test</li>
+                        <li>Security headers audit</li>
+                    </ul>
+                </div>
+
+                <div class="pipeline-arrow">&rarr;</div>
+
+                <div class="pipeline-step">
+                    <div class="step-badge">Stage 3</div>
+                    <div class="step-title">Publish (GHCR)</div>
+                    <ul class="step-tasks">
+                        <li>Protected branch filter</li>
+                        <li>GHCR authentication</li>
+                        <li>Commit SHA tagging</li>
+                        <li>SemVer tag generation</li>
+                        <li>OCI metadata injection</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- CI vs CD Clarification -->
+        <section class="card">
+            <h2>Understanding CI vs. CD</h2>
+            <div class="comparison-grid">
+                <div class="comparison-card">
+                    <div class="comparison-header">
+                        <h3>Continuous Integration (CI)</h3>
+                        <span class="badge badge-primary">Validation & Verification</span>
+                    </div>
+                    <p>
+                        Continuous Integration is the practice of automatically integrating code changes from multiple contributors into a shared repository several times a day.
+                    </p>
+                    <ul>
+                        <li>Runs on every Pull Request and branch commit.</li>
+                        <li>Executes linters, syntax checks, and unit tests.</li>
+                        <li>Builds ephemeral containers to run automated smoke tests.</li>
+                        <li><strong>Outcome:</strong> Immediate feedback on regressions before code is merged.</li>
+                    </ul>
+                </div>
+                <div class="comparison-card">
+                    <div class="comparison-header">
+                        <h3>Continuous Delivery (CD)</h3>
+                        <span class="badge badge-success">Artifact Release</span>
+                    </div>
+                    <p>
+                        Continuous Delivery ensures that verified code changes can be safely and reliably released at any time.
+                    </p>
+                    <ul>
+                        <li>Runs strictly on protected branches (e.g., <code>main</code>) or version tags.</li>
+                        <li>Packages immutable, production-ready container images.</li>
+                        <li>Publishes versioned artifacts to GitHub Container Registry (GHCR).</li>
+                        <li><strong>Outcome:</strong> An audited, signed container image ready for deployment.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pulling Image Section -->
+        <section class="card">
+            <h2>Pulling the Container Image</h2>
+            <p class="section-desc">Published images from this workflow can be retrieved from GitHub Container Registry:</p>
+            <div class="terminal-box">
+                <div class="terminal-bar">
+                    <span class="terminal-dot red"></span>
+                    <span class="terminal-dot yellow"></span>
+                    <span class="terminal-dot green"></span>
+                    <span class="terminal-title">bash</span>
+                </div>
+                <pre class="terminal-body"><code># Pull the latest release
+docker pull ghcr.io/OWNER/docker-cicd-pipeline:latest
+
+# Or pull a specific semantic version / commit SHA
+docker pull ghcr.io/OWNER/docker-cicd-pipeline:v1.0.0
+docker pull ghcr.io/OWNER/docker-cicd-pipeline:sha-$(git rev-parse --short HEAD)
+
+# Run container locally on port 8080
+docker run -d --name cicd-app -p 8080:8080 --read-only ghcr.io/OWNER/docker-cicd-pipeline:latest</code></pre>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container footer-content">
+            <p>Built with ❤️ as a DevOps & CI/CD Portfolio Project &bull; Upwork Ready</p>
+            <p class="footer-sub">Tested and verified with GitHub Actions, Docker, and Nginx Unprivileged</p>
+        </div>
+    </footer>
+
+    <script src="assets/app.js"></script>
+</body>
+</html>
